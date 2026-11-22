@@ -1,0 +1,68 @@
+.pio_version 1
+
+.program dab_tick
+
+pull block
+mov isr, osr
+
+.wrap_target
+    mov x, isr
+
+tick_delay:
+    jmp x-- tick_delay
+
+    irq 0 rel
+.wrap
+
+
+.program dab_bridge
+
+pull block
+mov x, osr
+
+.wrap_target
+
+    wait 1 irq 2 rel
+
+    mov y, status
+    jmp !y no_update_pos
+
+    irq clear 6 rel
+    pull block
+    mov x, osr
+    jmp update_done_pos
+
+no_update_pos:
+    nop [3]
+
+update_done_pos:
+    mov y, x
+
+phase_delay_pos:
+    jmp y-- phase_delay_pos
+
+    set pins, 9
+
+
+    wait 1 irq 2 rel
+
+    mov y, status
+    jmp !y no_update_neg
+
+    irq clear 6 rel
+    pull block
+    mov x, osr
+    jmp update_done_neg
+
+no_update_neg:
+    nop [3]
+
+update_done_neg:
+    mov y, x
+
+phase_delay_neg:
+    jmp y-- phase_delay_neg
+
+    set pins, 6
+
+.wrap
